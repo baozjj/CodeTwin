@@ -49,8 +49,8 @@ const t = __importStar(require("@babel/types"));
 class CodeExtractor {
     constructor() {
         this.defaultOptions = {
-            extensions: ['.ts', '.tsx', '.js', '.jsx', '.vue'],
-            excludePatterns: ['node_modules', 'dist', 'out', 'build', '.git']
+            extensions: [".ts", ".tsx", ".js", ".jsx", ".vue"],
+            excludePatterns: ["node_modules", "dist", "out", "build", ".git"],
         };
     }
     /**
@@ -60,7 +60,7 @@ class CodeExtractor {
         const opts = { ...this.defaultOptions, ...options };
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders || workspaceFolders.length === 0) {
-            vscode.window.showWarningMessage('未找到工作区文件夹');
+            vscode.window.showWarningMessage("未找到工作区文件夹");
             return [];
         }
         const allUnits = [];
@@ -88,7 +88,7 @@ class CodeExtractor {
             for (const entry of entries) {
                 const fullPath = path.join(currentDir, entry.name);
                 // 检查是否应该排除
-                if (options.excludePatterns?.some(pattern => fullPath.includes(pattern))) {
+                if (options.excludePatterns?.some((pattern) => fullPath.includes(pattern))) {
                     continue;
                 }
                 if (entry.isDirectory()) {
@@ -109,15 +109,15 @@ class CodeExtractor {
      * 从单个文件提取代码单元
      */
     async extractFromFile(filePath) {
-        let code = fs.readFileSync(filePath, 'utf-8');
+        let code = fs.readFileSync(filePath, "utf-8");
         let lineOffset = 0;
         // 如果是 Vue 文件,提取 script 内容
-        if (filePath.endsWith('.vue')) {
+        if (filePath.endsWith(".vue")) {
             const scriptMatch = code.match(/<script[^>]*>([\s\S]*?)<\/script>/);
             if (scriptMatch) {
                 // 计算 offset
                 const preScript = code.substring(0, scriptMatch.index);
-                lineOffset = preScript.split('\n').length - 1;
+                lineOffset = preScript.split("\n").length - 1;
                 code = scriptMatch[1];
             }
             else {
@@ -142,17 +142,19 @@ class CodeExtractor {
      */
     parseAST(code, filePath) {
         // Vue 文件视作 TS/JS 处理
-        const isTsx = filePath.endsWith('.tsx') || filePath.endsWith('.jsx');
-        const isTs = filePath.endsWith('.ts') || filePath.endsWith('.tsx') || filePath.endsWith('.vue');
+        const isTsx = filePath.endsWith(".tsx") || filePath.endsWith(".jsx");
+        const isTs = filePath.endsWith(".ts") ||
+            filePath.endsWith(".tsx") ||
+            filePath.endsWith(".vue");
         return (0, parser_1.parse)(code, {
-            sourceType: 'module',
+            sourceType: "module",
             plugins: [
-                isTs ? 'typescript' : 'flow',
-                isTsx ? 'jsx' : null,
-                'decorators-legacy',
-                'classProperties',
-                'objectRestSpread'
-            ].filter(Boolean)
+                isTs ? "typescript" : "flow",
+                isTsx ? "jsx" : null,
+                "decorators-legacy",
+                "classProperties",
+                "objectRestSpread",
+            ].filter(Boolean),
         });
     }
     /**
@@ -167,9 +169,9 @@ class CodeExtractor {
             FunctionDeclaration: (path) => {
                 const node = path.node;
                 // 检查是否是导出的函数
-                if (path.parent.type === 'ExportNamedDeclaration' ||
-                    path.parent.type === 'ExportDefaultDeclaration') {
-                    const name = node.id?.name || 'default';
+                if (path.parent.type === "ExportNamedDeclaration" ||
+                    path.parent.type === "ExportDefaultDeclaration") {
+                    const name = node.id?.name || "default";
                     const unit = this.createCodeUnit(node, code, filePath, name, lineOffset);
                     if (unit) {
                         // 判断类型
@@ -182,8 +184,8 @@ class CodeExtractor {
             VariableDeclaration: (path) => {
                 const node = path.node;
                 // 检查是否是导出的
-                if (path.parent.type === 'ExportNamedDeclaration' ||
-                    path.parent.type === 'ExportDefaultDeclaration') {
+                if (path.parent.type === "ExportNamedDeclaration" ||
+                    path.parent.type === "ExportDefaultDeclaration") {
                     for (const declaration of node.declarations) {
                         if (t.isIdentifier(declaration.id) &&
                             (t.isArrowFunctionExpression(declaration.init) ||
@@ -198,7 +200,7 @@ class CodeExtractor {
                         }
                     }
                 }
-            }
+            },
         });
     }
     /**
@@ -209,10 +211,10 @@ class CodeExtractor {
             return null;
         }
         const { start, end } = node.loc;
-        const lines = code.split('\n');
+        const lines = code.split("\n");
         // 提取代码片段
         const codeLines = lines.slice(start.line - 1, end.line);
-        const extractedCode = codeLines.join('\n');
+        const extractedCode = codeLines.join("\n");
         return {
             name,
             code: extractedCode,
@@ -221,7 +223,7 @@ class CodeExtractor {
             startColumn: start.column,
             endLine: end.line + lineOffset,
             endColumn: end.column,
-            type: 'function' // 默认类型,后续会更新
+            type: "function", // 默认类型,后续会更新
         };
     }
     /**
@@ -229,8 +231,10 @@ class CodeExtractor {
      */
     determineUnitType(name, path) {
         // 检查是否是 Hook (以 use 开头)
-        if (name.startsWith('use') && name.length > 3 && name[3] === name[3].toUpperCase()) {
-            return 'hook';
+        if (name.startsWith("use") &&
+            name.length > 3 &&
+            name[3] === name[3].toUpperCase()) {
+            return "hook";
         }
         // 检查是否是 React 组件 (首字母大写且返回 JSX)
         if (name[0] === name[0].toUpperCase()) {
@@ -242,13 +246,13 @@ class CodeExtractor {
                 },
                 JSXFragment: () => {
                     hasJSX = true;
-                }
+                },
             });
             if (hasJSX) {
-                return 'component';
+                return "component";
             }
         }
-        return 'function';
+        return "function";
     }
 }
 exports.CodeExtractor = CodeExtractor;

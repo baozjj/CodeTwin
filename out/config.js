@@ -6,7 +6,7 @@ exports.CONFIG = void 0;
  */
 exports.CONFIG = {
     // 模型配置
-    MODEL_NAME: 'Xenova/all-MiniLM-L6-v2',
+    MODEL_NAME: "Xenova/all-MiniLM-L6-v2",
     VECTOR_DIMENSION: 384,
     MAX_TOKEN_LENGTH: 512,
     // 相似度配置
@@ -15,6 +15,6 @@ exports.CONFIG = {
     MAX_THRESHOLD: 1.0,
     // 性能配置
     BATCH_SIZE: 10,
-    ENABLE_CACHE: true
+    ENABLE_CACHE: true,
 };
 //# sourceMappingURL=config.js.map

@@ -3,7 +3,11 @@
     "displayName": "CodeTwin",
     "description": "语义代码查重工具 - 基于 AST 分析检测重复代码",
     "version": "0.1.0",
-    "publisher": "codetwin-dev",
+    "publisher": "baozj",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/baozjj/CodeTwin"
+    },
     "engines": {
         "vscode": "^1.85.0"
     },

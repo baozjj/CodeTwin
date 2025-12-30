@@ -21,7 +21,7 @@ class SimilarityService {
      */
     addVectors(units, vectors) {
         if (units.length !== vectors.length) {
-            throw new Error('代码单元数量与向量数量不匹配');
+            throw new Error("代码单元数量与向量数量不匹配");
         }
         for (let i = 0; i < units.length; i++) {
             this.addVector(units[i], vectors[i]);
@@ -32,7 +32,7 @@ class SimilarityService {
      */
     cosineSimilarity(v1, v2) {
         if (v1.length !== v2.length) {
-            throw new Error('向量维度不匹配');
+            throw new Error("向量维度不匹配");
         }
         let dotProduct = 0;
         let norm1 = 0;
@@ -71,7 +71,7 @@ class SimilarityService {
                     pairs.push({
                         source: entry1.unit,
                         target: entry2.unit,
-                        similarity: similarity
+                        similarity: similarity,
                     });
                 }
             }
@@ -100,7 +100,7 @@ class SimilarityService {
             if (similarity >= threshold) {
                 results.push({
                     unit: entry.unit,
-                    similarity: similarity
+                    similarity: similarity,
                 });
             }
         }
@@ -115,8 +115,8 @@ class SimilarityService {
         return this.vectors.size;
     }
     /**
-   * 清空所有向量
-   */
+     * 清空所有向量
+     */
     clear() {
         this.vectors.clear();
     }
@@ -154,7 +154,7 @@ class SimilarityService {
                 pairs.push({
                     source: target.unit,
                     target: candidate.unit,
-                    similarity: candidate.similarity
+                    similarity: candidate.similarity,
                 });
             }
         }

@@ -40,7 +40,7 @@ const vscode = __importStar(require("vscode"));
  */
 class DiagnosticManager {
     constructor() {
-        this.collection = vscode.languages.createDiagnosticCollection('codetwin');
+        this.collection = vscode.languages.createDiagnosticCollection("codetwin");
     }
     /**
      * 更新特定文件的诊断信息
@@ -59,8 +59,8 @@ class DiagnosticManager {
             const percentage = (pair.similarity * 100).toFixed(0);
             const message = `检测到潜在的重复逻辑 (相似度: ${percentage}%)\n相似目标: ${pair.target.name} in ${pair.target.filePath}`;
             const diagnostic = new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Information);
-            diagnostic.source = 'CodeTwin';
-            diagnostic.code = 'duplicate-code';
+            diagnostic.source = "CodeTwin";
+            diagnostic.code = "duplicate-code";
             diagnostics.push(diagnostic);
         }
         this.collection.set(document.uri, diagnostics);

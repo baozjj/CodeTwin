@@ -1,0 +1,7 @@
+.gitignore
+.vscode/**
+src/**
+tsconfig.json
+knip.json
+webpack.config.js
+node_modules/**

@@ -69,15 +69,15 @@ class DuplicateCodeLensProvider {
             const range = new vscode.Range(pair.source.startLine - 1, 0, pair.source.startLine - 1, 0);
             // 查找该单元的所有相似项
             const similarUnits = pairs
-                .filter(p => p.source.startLine === pair.source.startLine)
+                .filter((p) => p.source.startLine === pair.source.startLine)
                 .sort((a, b) => b.similarity - a.similarity);
-            const maxSimilarity = Math.max(...similarUnits.map(p => p.similarity));
+            const maxSimilarity = Math.max(...similarUnits.map((p) => p.similarity));
             const percentage = (maxSimilarity * 100).toFixed(0);
             const command = {
                 title: `⚡️ 发现 ${similarUnits.length} 个相似块 (最高相似度: ${percentage}%)`,
-                tooltip: '点击查看详细对比',
-                command: 'codetwin.showDuplicates',
-                arguments: [pair.source, similarUnits]
+                tooltip: "点击查看详细对比",
+                command: "codetwin.showDuplicates",
+                arguments: [pair.source, similarUnits],
             };
             codeLenses.push(new vscode.CodeLens(range, command));
         }

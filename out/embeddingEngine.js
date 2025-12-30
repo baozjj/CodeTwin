@@ -59,22 +59,22 @@ class EmbeddingEngine {
         try {
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
-                title: 'CodeTwin',
-                cancellable: false
+                title: "CodeTwin",
+                cancellable: false,
             }, async (progress) => {
                 progress.report({
-                    message: '正在加载语义模型...',
-                    increment: 0
+                    message: "正在加载语义模型...",
+                    increment: 0,
                 });
                 // 加载 feature-extraction pipeline
-                this.model = await (0, transformers_1.pipeline)('feature-extraction', config_1.CONFIG.MODEL_NAME);
+                this.model = await (0, transformers_1.pipeline)("feature-extraction", config_1.CONFIG.MODEL_NAME);
                 progress.report({
-                    message: '模型加载完成',
-                    increment: 100
+                    message: "模型加载完成",
+                    increment: 100,
                 });
                 this.isInitialized = true;
             });
-            console.log('EmbeddingEngine 初始化成功');
+            console.log("EmbeddingEngine 初始化成功");
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -87,13 +87,13 @@ class EmbeddingEngine {
      */
     async generateVector(code) {
         if (!this.isInitialized || !this.model) {
-            throw new Error('模型未初始化,请先调用 initialize()');
+            throw new Error("模型未初始化,请先调用 initialize()");
         }
         try {
             // 使用模型生成 embedding
             const output = await this.model(code, {
-                pooling: 'mean',
-                normalize: true
+                pooling: "mean",
+                normalize: true,
             });
             // 转换为 Float32Array
             const vector = new Float32Array(output.data);
@@ -110,7 +110,7 @@ class EmbeddingEngine {
      */
     async generateVectors(codes, onProgress) {
         if (!this.isInitialized || !this.model) {
-            throw new Error('模型未初始化,请先调用 initialize()');
+            throw new Error("模型未初始化,请先调用 initialize()");
         }
         const vectors = [];
         const total = codes.length;

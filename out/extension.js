@@ -53,25 +53,31 @@ let outputChannel;
  * 插件激活时调用
  */
 async function activate(context) {
-    console.log('CodeTwin 插件已激活');
+    console.log("CodeTwin 插件已激活");
     // 初始化服务
     engine = new embeddingEngine_1.EmbeddingEngine();
     similarityService = new similarityService_1.SimilarityService();
     diagnosticManager = new diagnosticManager_1.DiagnosticManager();
     codeLensProvider = new codeLensProvider_1.DuplicateCodeLensProvider();
-    outputChannel = vscode.window.createOutputChannel('CodeTwin');
+    outputChannel = vscode.window.createOutputChannel("CodeTwin");
     // 注册 CodeLens 提供者
-    context.subscriptions.push(vscode.languages.registerCodeLensProvider({ scheme: 'file', pattern: '**/*.{ts,tsx,js,jsx,vue}' }, codeLensProvider));
+    context.subscriptions.push(vscode.languages.registerCodeLensProvider({ scheme: "file", pattern: "**/*.{ts,tsx,js,jsx,vue}" }, codeLensProvider));
     // 注册命令: 提取代码
-    context.subscriptions.push(vscode.commands.registerCommand('codetwin.extractCode', extractCodeUnits));
+    context.subscriptions.push(vscode.commands.registerCommand("codetwin.extractCode", extractCodeUnits));
     // 注册命令: 全量查重
-    context.subscriptions.push(vscode.commands.registerCommand('codetwin.findDuplicates', findDuplicates));
+    context.subscriptions.push(vscode.commands.registerCommand("codetwin.findDuplicates", findDuplicates));
     // 注册命令: 显示重复项详情
-    context.subscriptions.push(vscode.commands.registerCommand('codetwin.showDuplicates', showDuplicatesInteraction));
+    context.subscriptions.push(vscode.commands.registerCommand("codetwin.showDuplicates", showDuplicatesInteraction));
     // 监听文件保存事件 (防抖处理)
     const debouncedSaveHandler = (0, debounce_1.debounce)(async (document) => {
         // 过滤非目标文件
-        if (!['typescript', 'typescriptreact', 'javascript', 'javascriptreact', 'vue'].includes(document.languageId)) {
+        if (![
+            "typescript",
+            "typescriptreact",
+            "javascript",
+            "javascriptreact",
+            "vue",
+        ].includes(document.languageId)) {
             return;
         }
         // 如果模型未初始化,先初始化(静默)
@@ -82,7 +88,7 @@ async function activate(context) {
             await processSingleFile(document);
         }
         catch (e) {
-            console.error('增量查重失败:', e);
+            console.error("增量查重失败:", e);
         }
     }, 1000); // 1秒防抖
     context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(debouncedSaveHandler));
@@ -105,14 +111,14 @@ async function processSingleFile(document) {
         return;
     }
     // 2. 向量化
-    const codes = units.map(u => u.code);
+    const codes = units.map((u) => u.code);
     const vectors = await engine.generateVectors(codes);
     // 3. 更新向量库
     const codeVectors = units.map((u, i) => ({ unit: u, vector: vectors[i] }));
     similarityService.updateFileVectors(filePath, codeVectors);
     // 4. 查找该文件的重复项
-    const config = vscode.workspace.getConfiguration('codetwin');
-    const threshold = config.get('similarityThreshold') || 0.85;
+    const config = vscode.workspace.getConfiguration("codetwin");
+    const threshold = config.get("similarityThreshold") || 0.85;
     const duplicates = similarityService.findDuplicatesForFile(filePath, threshold);
     // 5. 更新 UI
     codeLensProvider.updateDuplicates(filePath, duplicates);
@@ -125,18 +131,18 @@ async function processSingleFile(document) {
  * 交互式显示重复项
  */
 async function showDuplicatesInteraction(sourceUnit, similarUnits) {
-    const items = similarUnits.map(pair => {
+    const items = similarUnits.map((pair) => {
         const similarity = (pair.similarity * 100).toFixed(0);
         return {
             label: `$(symbol-file) ${pair.target.filePath.split(/[\\/]/).pop()} - ${pair.target.name}`,
             description: `相似度: ${similarity}%`,
             detail: `${pair.target.filePath}:${pair.target.startLine}`,
-            pair: pair
+            pair: pair,
         };
     });
     const selected = await vscode.window.showQuickPick(items, {
         placeHolder: `选择要对比的代码块 (源: ${sourceUnit.name})`,
-        title: 'CodeTwin 代码对比'
+        title: "CodeTwin 代码对比",
     });
     if (selected) {
         const pair = selected.pair;
@@ -145,7 +151,7 @@ async function showDuplicatesInteraction(sourceUnit, similarUnits) {
         // 打开 Diff 视图
         // 构造选区
         const selection = new vscode.Range(pair.target.startLine - 1, 0, pair.target.endLine, 0);
-        await vscode.commands.executeCommand('vscode.diff', uri1, uri2, `CodeTwin: ${pair.source.name} ↔ ${pair.target.name} (${(pair.similarity * 100).toFixed(0)}%)`);
+        await vscode.commands.executeCommand("vscode.diff", uri1, uri2, `CodeTwin: ${pair.source.name} ↔ ${pair.target.name} (${(pair.similarity * 100).toFixed(0)}%)`);
     }
 }
 /**
@@ -153,12 +159,12 @@ async function showDuplicatesInteraction(sourceUnit, similarUnits) {
  */
 async function extractCodeUnits() {
     outputChannel.show();
-    outputChannel.appendLine('CodeTwin - 代码单元提取 (手动触发)');
+    outputChannel.appendLine("CodeTwin - 代码单元提取 (手动触发)");
     try {
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'CodeTwin: 提取代码',
-            cancellable: false
+            title: "CodeTwin: 提取代码",
+            cancellable: false,
         }, async (progress) => {
             const extractor = new codeExtractor_1.CodeExtractor();
             const units = await extractor.extractFromWorkspace();
@@ -175,48 +181,48 @@ async function extractCodeUnits() {
  */
 async function findDuplicates() {
     outputChannel.show();
-    outputChannel.appendLine('='.repeat(60));
-    outputChannel.appendLine('CodeTwin - 全量代码查重');
-    outputChannel.appendLine('='.repeat(60));
+    outputChannel.appendLine("=".repeat(60));
+    outputChannel.appendLine("CodeTwin - 全量代码查重");
+    outputChannel.appendLine("=".repeat(60));
     try {
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'CodeTwin 全量查重',
-            cancellable: false
+            title: "CodeTwin 全量查重",
+            cancellable: false,
         }, async (progress) => {
             // 1. 扫描
-            progress.report({ message: '扫描工作区...', increment: 0 });
+            progress.report({ message: "扫描工作区...", increment: 0 });
             const extractor = new codeExtractor_1.CodeExtractor();
             const units = await extractor.extractFromWorkspace();
             if (units.length === 0)
                 return;
             // 2. 初始化模型
-            progress.report({ message: '加载模型...', increment: 20 });
+            progress.report({ message: "加载模型...", increment: 20 });
             if (!engine.isReady()) {
                 await engine.initialize();
             }
             // 3. 向量化
-            progress.report({ message: '向量化代码...', increment: 40 });
-            const codes = units.map(u => u.code);
+            progress.report({ message: "向量化代码...", increment: 40 });
+            const codes = units.map((u) => u.code);
             const vectors = await engine.generateVectors(codes, (current, total) => {
                 progress.report({
                     message: `向量化 (${current}/${total})...`,
-                    increment: 40 + ((current / total) * 40)
+                    increment: 40 + (current / total) * 40,
                 });
             });
             // 4. 重置并添加向量
             similarityService.clear();
             similarityService.addVectors(units, vectors);
             // 5. 计算相似度
-            progress.report({ message: '计算相似度...', increment: 90 });
-            const config = vscode.workspace.getConfiguration('codetwin');
-            const threshold = config.get('similarityThreshold') || 0.85;
+            progress.report({ message: "计算相似度...", increment: 90 });
+            const config = vscode.workspace.getConfiguration("codetwin");
+            const threshold = config.get("similarityThreshold") || 0.85;
             const pairs = similarityService.findDuplicates(threshold);
             // 6. 报告
             const report = {
                 totalUnits: units.length,
                 duplicatePairs: pairs.length,
-                pairs: pairs
+                pairs: pairs,
             };
             outputChannel.appendLine(`扫描单元: ${report.totalUnits}`);
             outputChannel.appendLine(`发现相似对: ${report.duplicatePairs}`);
@@ -242,6 +248,6 @@ function deactivate() {
     if (diagnosticManager) {
         diagnosticManager.dispose();
     }
-    console.log('CodeTwin 插件已停用');
+    console.log("CodeTwin 插件已停用");
 }
 //# sourceMappingURL=extension.js.map
