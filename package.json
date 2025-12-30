@@ -1,0 +1,56 @@
+{
+    "name": "codetwin",
+    "displayName": "CodeTwin",
+    "description": "语义代码查重工具 - 基于 AST 分析检测重复代码",
+    "version": "0.1.0",
+    "publisher": "codetwin-dev",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "codetwin.extractCode",
+                "title": "CodeTwin: Extract Code Units"
+            },
+            {
+                "command": "codetwin.findDuplicates",
+                "title": "CodeTwin: Find Duplicate Code"
+            }
+        ],
+        "configuration": {
+            "title": "CodeTwin",
+            "properties": {
+                "codetwin.similarityThreshold": {
+                    "type": "number",
+                    "default": 0.85,
+                    "minimum": 0.5,
+                    "maximum": 1.0,
+                    "description": "相似度阈值 (0.5-1.0),越高越严格"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile"
+    },
+    "devDependencies": {
+        "@types/babel__traverse": "^7.28.0",
+        "@types/node": "^20.10.0",
+        "@types/vscode": "^1.85.0",
+        "typescript": "^5.3.0"
+    },
+    "dependencies": {
+        "@babel/parser": "^7.23.6",
+        "@babel/traverse": "^7.23.6",
+        "@babel/types": "^7.23.6",
+        "@xenova/transformers": "^2.17.0"
+    }
+}
