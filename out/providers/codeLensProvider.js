@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DuplicateCodeLensProvider = void 0;
 const vscode = __importStar(require("vscode"));
+const path = __importStar(require("path"));
 /**
  * 提供相似代码的 CodeLens
  */
@@ -71,15 +72,31 @@ class DuplicateCodeLensProvider {
             const similarUnits = pairs
                 .filter((p) => p.source.startLine === pair.source.startLine)
                 .sort((a, b) => b.similarity - a.similarity);
-            const maxSimilarity = Math.max(...similarUnits.map((p) => p.similarity));
-            const percentage = (maxSimilarity * 100).toFixed(0);
-            const command = {
-                title: `⚡️ 发现 ${similarUnits.length} 个相似块 (最高相似度: ${percentage}%)`,
-                tooltip: "点击查看详细对比",
-                command: "codetwin.showDuplicates",
-                arguments: [pair.source, similarUnits],
-            };
-            codeLenses.push(new vscode.CodeLens(range, command));
+            // 显示前 3 个最相似的项作为独立 CodeLens
+            const topSimilar = similarUnits.slice(0, 3);
+            for (const sim of topSimilar) {
+                const percentage = (sim.similarity * 100).toFixed(0);
+                const targetName = sim.target.filePath !== pair.source.filePath
+                    ? `${path.basename(sim.target.filePath).split(".")[0]}:${sim.target.name}`
+                    : sim.target.name;
+                const command = {
+                    title: `⚡️ ${percentage}%: ${targetName}`,
+                    tooltip: `点击跳转: ${sim.target.filePath}:${sim.target.startLine}`,
+                    command: "codetwin.jumpToDuplicate",
+                    arguments: [sim],
+                };
+                codeLenses.push(new vscode.CodeLens(range, command));
+            }
+            // 如果超过 3 个，添加一个汇总 CodeLens
+            if (similarUnits.length > 3) {
+                const command = {
+                    title: `... 以及其他 ${similarUnits.length - 3} 个相似块`,
+                    tooltip: "点击查看完整列表",
+                    command: "codetwin.showDuplicates",
+                    arguments: [pair.source, similarUnits],
+                };
+                codeLenses.push(new vscode.CodeLens(range, command));
+            }
         }
         return codeLenses;
     }

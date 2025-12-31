@@ -66,6 +66,8 @@ async function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand("codetwin.extractCode", extractCodeUnits));
     // 注册命令: 全量查重
     context.subscriptions.push(vscode.commands.registerCommand("codetwin.findDuplicates", findDuplicates));
+    // 注册命令: 直接跳转到重复项
+    context.subscriptions.push(vscode.commands.registerCommand("codetwin.jumpToDuplicate", jumpToDuplicate));
     // 注册命令: 显示重复项详情
     context.subscriptions.push(vscode.commands.registerCommand("codetwin.showDuplicates", showDuplicatesInteraction));
     // 监听文件保存事件 (防抖处理)
@@ -128,6 +130,31 @@ async function processSingleFile(document) {
     }
 }
 /**
+ * 直接打开 Diff 视图对比重复项
+ */
+async function diffDuplicate(pair) {
+    const uri1 = vscode.Uri.file(pair.source.filePath);
+    const uri2 = vscode.Uri.file(pair.target.filePath);
+    await vscode.commands.executeCommand("vscode.diff", uri1, uri2, `CodeTwin: ${pair.source.name} ↔ ${pair.target.name} (${(pair.similarity * 100).toFixed(0)}%)`);
+    // 尝试定位到对应行 (Diff 视图可能不总是精确支持,但值得一试)
+    // 注意: vscode.diff 打开的是编辑器,我们需要在打开后设置可见范围
+    // 但 executeCommand 是异步且没有返回 editor 实例的简单方法
+}
+/**
+ * 直接跳转到重复项代码块
+ */
+async function jumpToDuplicate(pair) {
+    const uri = vscode.Uri.file(pair.target.filePath);
+    const document = await vscode.workspace.openTextDocument(uri);
+    const editor = await vscode.window.showTextDocument(document, {
+        preview: true,
+    });
+    // 构造选区
+    const range = new vscode.Range(pair.target.startLine - 1, pair.target.startColumn, pair.target.endLine - 1, pair.target.endColumn);
+    editor.selection = new vscode.Selection(range.start, range.end);
+    editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+}
+/**
  * 交互式显示重复项
  */
 async function showDuplicatesInteraction(sourceUnit, similarUnits) {
@@ -145,13 +172,7 @@ async function showDuplicatesInteraction(sourceUnit, similarUnits) {
         title: "CodeTwin 代码对比",
     });
     if (selected) {
-        const pair = selected.pair;
-        const uri1 = vscode.Uri.file(pair.source.filePath);
-        const uri2 = vscode.Uri.file(pair.target.filePath);
-        // 打开 Diff 视图
-        // 构造选区
-        const selection = new vscode.Range(pair.target.startLine - 1, 0, pair.target.endLine, 0);
-        await vscode.commands.executeCommand("vscode.diff", uri1, uri2, `CodeTwin: ${pair.source.name} ↔ ${pair.target.name} (${(pair.similarity * 100).toFixed(0)}%)`);
+        await jumpToDuplicate(selected.pair);
     }
 }
 /**
