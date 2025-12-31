@@ -43,6 +43,7 @@ const path = __importStar(require("path"));
 const parser_1 = require("@babel/parser");
 const traverse_1 = __importDefault(require("@babel/traverse"));
 const t = __importStar(require("@babel/types"));
+const generator_1 = __importDefault(require("@babel/generator"));
 /**
  * 代码提取器 - 从工作区提取独立功能单元
  */
@@ -253,6 +254,73 @@ class CodeExtractor {
             }
         }
         return "function";
+    }
+    /**
+     * 规范化代码 - 统一参数名、移除 export、压缩格式
+     */
+    normalizeCode(code, filePath) {
+        try {
+            const isTsx = filePath?.endsWith(".tsx") || filePath?.endsWith(".jsx");
+            const isTs = filePath?.endsWith(".ts") ||
+                filePath?.endsWith(".tsx") ||
+                filePath?.endsWith(".vue");
+            // 解析 AST
+            const ast = (0, parser_1.parse)(code, {
+                sourceType: "module",
+                plugins: [
+                    isTs ? "typescript" : "flow",
+                    isTsx ? "jsx" : null,
+                    "decorators-legacy",
+                    "classProperties",
+                    "objectRestSpread",
+                ].filter(Boolean),
+            });
+            (0, traverse_1.default)(ast, {
+                // 遇到函数定义,统一标准化参数名
+                Function: (funcPath) => {
+                    const funcNode = funcPath.node;
+                    // 统一参数名: 所有参数改成 arg0, arg1...
+                    funcNode.params.forEach((param, index) => {
+                        if (param.type === "Identifier" && param.name) {
+                            const oldName = param.name;
+                            const newName = `arg${index}`;
+                            // 遍历函数体,把用到的变量名全换了
+                            funcPath.traverse({
+                                Identifier: (idPath) => {
+                                    // 避免修改参数声明本身
+                                    if (idPath.node.name === oldName &&
+                                        idPath.key !== "id" &&
+                                        idPath.key !== "name") {
+                                        idPath.node.name = newName;
+                                    }
+                                },
+                            }, funcPath.scope);
+                            // 更新参数名
+                            param.name = newName;
+                        }
+                    });
+                },
+                // 移除 export 关键字,只保留核心逻辑
+                ExportNamedDeclaration: (exportPath) => {
+                    const declaration = exportPath.node.declaration;
+                    if (declaration) {
+                        exportPath.replaceWith(declaration);
+                    }
+                },
+            });
+            // 重新生成代码,并压缩去空格
+            const result = (0, generator_1.default)(ast, {
+                comments: false,
+                compact: true,
+                minified: true,
+            });
+            return result.code;
+        }
+        catch (error) {
+            // 规范化失败时返回原代码
+            console.warn(`规范化代码失败: ${error}`);
+            return code;
+        }
     }
 }
 exports.CodeExtractor = CodeExtractor;

@@ -2,7 +2,7 @@
     "name": "codetwin",
     "displayName": "CodeTwin",
     "description": "语义代码查重工具 - 基于 AST 分析检测重复代码",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "publisher": "baozj",
     "repository": {
         "type": "git",
@@ -47,11 +47,13 @@
     },
     "devDependencies": {
         "@types/babel__traverse": "^7.28.0",
+        "@types/babel__generator": "^7.6.8",
         "@types/node": "^20.10.0",
         "@types/vscode": "^1.85.0",
         "typescript": "^5.3.0"
     },
     "dependencies": {
+        "@babel/generator": "^7.23.6",
         "@babel/parser": "^7.23.6",
         "@babel/traverse": "^7.23.6",
         "@babel/types": "^7.23.6",

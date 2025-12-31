@@ -37,8 +37,9 @@ exports.EmbeddingEngine = void 0;
 const transformers_1 = require("@xenova/transformers");
 const vscode = __importStar(require("vscode"));
 const config_1 = require("./config");
+const codeExtractor_1 = require("./codeExtractor");
 /**
- * 向量化引擎 - 使用 BERT 模型将代码转换为向量
+ * 向量化引擎
  */
 class EmbeddingEngine {
     constructor() {
@@ -48,6 +49,7 @@ class EmbeddingEngine {
         // 允许本地缓存模型文件
         transformers_1.env.allowLocalModels = true;
         transformers_1.env.allowRemoteModels = true;
+        this.codeExtractor = new codeExtractor_1.CodeExtractor();
     }
     /**
      * 初始化模型
@@ -85,13 +87,15 @@ class EmbeddingEngine {
     /**
      * 生成单个代码的向量表示
      */
-    async generateVector(code) {
+    async generateVector(code, filePath) {
         if (!this.isInitialized || !this.model) {
             throw new Error("模型未初始化,请先调用 initialize()");
         }
         try {
+            // 规范化代码后再生成向量
+            const normalizedCode = this.codeExtractor.normalizeCode(code, filePath);
             // 使用模型生成 embedding
-            const output = await this.model(code, {
+            const output = await this.model(normalizedCode, {
                 pooling: "mean",
                 normalize: true,
             });
@@ -108,7 +112,7 @@ class EmbeddingEngine {
     /**
      * 批量生成向量
      */
-    async generateVectors(codes, onProgress) {
+    async generateVectors(codes, filePaths, onProgress) {
         if (!this.isInitialized || !this.model) {
             throw new Error("模型未初始化,请先调用 initialize()");
         }
@@ -117,9 +121,11 @@ class EmbeddingEngine {
         // 分批处理以提高性能
         for (let i = 0; i < codes.length; i += config_1.CONFIG.BATCH_SIZE) {
             const batch = codes.slice(i, i + config_1.CONFIG.BATCH_SIZE);
+            const batchFilePaths = filePaths ? filePaths.slice(i, i + config_1.CONFIG.BATCH_SIZE) : undefined;
             // 处理当前批次
             for (let j = 0; j < batch.length; j++) {
-                const vector = await this.generateVector(batch[j]);
+                const filePath = batchFilePaths ? batchFilePaths[j] : undefined;
+                const vector = await this.generateVector(batch[j], filePath);
                 vectors.push(vector);
                 // 报告进度
                 if (onProgress) {
@@ -128,6 +134,12 @@ class EmbeddingEngine {
             }
         }
         return vectors;
+    }
+    /**
+     * 规范化单个代码
+     */
+    normalizeCode(code, filePath) {
+        return this.codeExtractor.normalizeCode(code, filePath);
     }
     /**
      * 检查模型是否已初始化

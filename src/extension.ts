@@ -251,9 +251,11 @@ async function findDuplicates() {
         // 3. 向量化
         progress.report({ message: "向量化代码...", increment: 40 });
         const codes = units.map((u) => u.code);
+        const filePaths = units.map((u) => u.filePath);
         const vectors = await engine.generateVectors(
           codes,
-          (current, total) => {
+          filePaths,
+          (current: number, total: number) => {
             progress.report({
               message: `向量化 (${current}/${total})...`,
               increment: 40 + (current / total) * 40,

@@ -1,19 +1,22 @@
 import { pipeline, env } from "@xenova/transformers";
 import * as vscode from "vscode";
 import { CONFIG } from "./config";
+import { CodeExtractor } from "./codeExtractor";
 
 /**
- * 向量化引擎 - 使用 BERT 模型将代码转换为向量
+ * 向量化引擎
  */
 export class EmbeddingEngine {
   private model: any = null;
   private isInitialized: boolean = false;
+  private codeExtractor: CodeExtractor;
 
   constructor() {
     // 配置 Transformers.js 环境
     // 允许本地缓存模型文件
     env.allowLocalModels = true;
     env.allowRemoteModels = true;
+    this.codeExtractor = new CodeExtractor();
   }
 
   /**
@@ -61,14 +64,17 @@ export class EmbeddingEngine {
   /**
    * 生成单个代码的向量表示
    */
-  async generateVector(code: string): Promise<Float32Array> {
+  async generateVector(code: string, filePath?: string): Promise<Float32Array> {
     if (!this.isInitialized || !this.model) {
       throw new Error("模型未初始化,请先调用 initialize()");
     }
 
     try {
+      // 规范化代码后再生成向量
+      const normalizedCode = this.codeExtractor.normalizeCode(code, filePath);
+
       // 使用模型生成 embedding
-      const output = await this.model(code, {
+      const output = await this.model(normalizedCode, {
         pooling: "mean",
         normalize: true,
       });
@@ -90,6 +96,7 @@ export class EmbeddingEngine {
    */
   async generateVectors(
     codes: string[],
+    filePaths?: string[],
     onProgress?: (current: number, total: number) => void
   ): Promise<Float32Array[]> {
     if (!this.isInitialized || !this.model) {
@@ -102,10 +109,12 @@ export class EmbeddingEngine {
     // 分批处理以提高性能
     for (let i = 0; i < codes.length; i += CONFIG.BATCH_SIZE) {
       const batch = codes.slice(i, i + CONFIG.BATCH_SIZE);
+      const batchFilePaths = filePaths ? filePaths.slice(i, i + CONFIG.BATCH_SIZE) : undefined;
 
       // 处理当前批次
       for (let j = 0; j < batch.length; j++) {
-        const vector = await this.generateVector(batch[j]);
+        const filePath = batchFilePaths ? batchFilePaths[j] : undefined;
+        const vector = await this.generateVector(batch[j], filePath);
         vectors.push(vector);
 
         // 报告进度
@@ -116,6 +125,13 @@ export class EmbeddingEngine {
     }
 
     return vectors;
+  }
+
+  /**
+   * 规范化单个代码
+   */
+  normalizeCode(code: string, filePath?: string): string {
+    return this.codeExtractor.normalizeCode(code, filePath);
   }
 
   /**
