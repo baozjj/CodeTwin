@@ -1,5 +1,6 @@
 import { pipeline, env } from "@xenova/transformers";
 import * as vscode from "vscode";
+import * as path from "path";
 import { CONFIG } from "./config";
 import { CodeExtractor } from "./codeExtractor";
 
@@ -13,9 +14,13 @@ export class EmbeddingEngine {
 
   constructor() {
     // 配置 Transformers.js 环境
-    // 允许本地缓存模型文件
+    // 允许本地缓存模型文件，禁止远程下载
     env.allowLocalModels = true;
-    env.allowRemoteModels = true;
+    env.allowRemoteModels = false;
+    // 设置本地缓存目录
+    const cacheDir = path.join(__dirname, "../models");
+    env.cacheDir = cacheDir;
+
     this.codeExtractor = new CodeExtractor();
   }
 

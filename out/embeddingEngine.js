@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmbeddingEngine = void 0;
 const transformers_1 = require("@xenova/transformers");
 const vscode = __importStar(require("vscode"));
+const path = __importStar(require("path"));
 const config_1 = require("./config");
 const codeExtractor_1 = require("./codeExtractor");
 /**
@@ -46,9 +47,12 @@ class EmbeddingEngine {
         this.model = null;
         this.isInitialized = false;
         // 配置 Transformers.js 环境
-        // 允许本地缓存模型文件
+        // 允许本地缓存模型文件，禁止远程下载
         transformers_1.env.allowLocalModels = true;
-        transformers_1.env.allowRemoteModels = true;
+        transformers_1.env.allowRemoteModels = false;
+        // 设置本地缓存目录
+        const cacheDir = path.join(__dirname, "../models");
+        transformers_1.env.cacheDir = cacheDir;
         this.codeExtractor = new codeExtractor_1.CodeExtractor();
     }
     /**
