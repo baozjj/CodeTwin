@@ -43,7 +43,8 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
-        "pretest": "npm run compile"
+        "pretest": "npm run compile",
+        "download-models": "node download_models.js"
     },
     "devDependencies": {
         "@types/babel__traverse": "^7.28.0",
